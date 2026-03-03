@@ -5,7 +5,7 @@ from utils import data_loader, preprocessing, feature_engineering, clustering, e
 st.set_page_config(page_title="Customer Segmentation", layout="wide", page_icon="📊")
 
 
-st.markdown(unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>Customer Segmentation Dashboard</h1>", unsafe_allow_html=True)
 
 st.title("👥 Customer Segmentation Dashboard")
 
