@@ -37,40 +37,32 @@ with tab1:
             else:
                 st.error(f"❌ {msg}")
 
-
 with tab2:
     if st.session_state.data is not None:
         st.header("1️⃣ Data Processing")
         
-        col_sets, col_info = st.columns([1, 2])
+        # --- AUTOMATED ENGINE INFO ---
+        st.info("🤖 **Engine Status:** Isolation Forest is active. Optimized for 95% data retention and high-value 'Whale' detection.")
         
-        with col_sets:
-            st.subheader("Cleanup Settings")
-           
-            outlier_method = st.radio(
-                "How should we handle outliers?",
-                options=["isolation_forest", "iqr", "none"],
-                format_func=lambda x: {
-                    "isolation_forest": "🤖 Isolation Forest (Best for Bank/Retail)",
-                    "iqr": "📐 IQR Rule (Best for Standard Data)",
-                    "none": "🚫 Keep All Data"
-                }[x]
-            )
-        
-     
+        # --- HARDCODED PROCESSING ---
+        # Automatically handle missing values
         df_clean = preprocessing.handle_missing_values(st.session_state.data)
-        df_final, df_outliers = preprocessing.remove_outliers(df_clean, method=outlier_method)
         
-        with col_info:
-            c1, c2 = st.columns(2)
-            c1.metric("Active Data", len(df_final))
-            c2.metric("Removed", len(df_outliers))
-            
-            if not df_outliers.empty:
-                with st.expander("View Removed Data"):
-                    st.dataframe(df_outliers.head())
+        # Automatically remove outliers using isolation_forest (Hardcoded)
+        df_final, df_outliers = preprocessing.remove_outliers(df_clean, method="isolation_forest")
+        
+        # Display Metrics
+        c1, c2 = st.columns(2)
+        c1.metric("Active Data Rows", len(df_final))
+        c2.metric("Anomalies Removed", len(df_outliers))
+        
+        if not df_outliers.empty:
+            with st.expander("🔍 View Removed Data (Anomalies)"):
+                st.dataframe(df_outliers.head(), width='stretch')
 
         st.divider()
+        
+        # --- FEATURE SELECTION ---
         st.header("2️⃣ Feature Selection")
         
         features_df = feature_engineering.auto_feature_selection(df_final)
@@ -84,23 +76,30 @@ with tab2:
         
         st.divider()
         
+        # --- EXECUTION BUTTON ---
         if st.button("🚀 Run Segmentation Analysis", type="primary"):
             if len(selected_cols) < 2:
-                st.error("Select at least 2 features.")
+                st.error("Select at least 2 features to build a multi-dimensional cluster.")
             else:
-                with st.spinner("Analyzing..."):
+                with st.spinner("AI Engine Clustering..."):
                     final_feats = features_df[selected_cols]
                     scaled, scaler = preprocessing.scale_data(final_feats)
                     
+                    # Run optimal K detection (Elbow Method)
                     best_k, wcss, sil_scores, k_range = clustering.find_optimal_k(scaled)
                     labels, model = clustering.run_clustering(scaled, best_k)
                     
+                    # Store results in Session State
                     st.session_state.results = {
                         'labels': labels, 'k': best_k, 'wcss': wcss, 'sil_scores': sil_scores, 
                         'k_range': k_range, 'scaled': scaled, 'raw': final_feats, 'clean': df_final
                     }
-                    st.success(f"Success! Found {best_k} segments.")
-                    st.plotly_chart(visualization.plot_elbow(wcss, k_range), use_container_width=True)
+                    st.success(f"Segmentation Complete! Optimized for {best_k} distinct business personas.")
+                    
+                    # Use 2026 'stretch' width syntax
+                    st.plotly_chart(visualization.plot_elbow(wcss, k_range), width='stretch')
+
+
 
 
 with tab3:
@@ -145,3 +144,4 @@ with tab4:
         
         csv = final_df.to_csv(index=False).encode('utf-8')
         st.download_button("Download CSV", csv, "segments.csv", "text/csv", type="primary")
+
